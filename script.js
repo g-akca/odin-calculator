@@ -11,6 +11,7 @@ function multiply(num1, num2) {
 }
 
 function divide(num1, num2) {
+    if (num2 == 0) return "Can't divide by 0!";
     return num1 / num2;
 }
 
@@ -27,73 +28,76 @@ function operate(operator, num1, num2) {
     }
 }
 
-function calculate() {
-    // Calculate if operator is selected
-    if (operator != "") {
-        // If num2 wasn't entered, keep num1 and remove the operator
-        if (num2 == "") {
-            operator = "";
-            display.value = num1;
-            return;
-        }
-
-        const result = operate(operator, Number(num1), Number(num2));
-        display.value = result;
-
-        // Reset variables, num1 is the result
-        num1 = result.toString();
-        num2 = "";
-        operator = "";
-    }
-}
-
 const digitButtons = document.querySelectorAll(".digit-btn");
 const operatorButtons = document.querySelectorAll(".operator-btn");
 const display = document.getElementById("display");
+const equalsBtn = document.getElementById("equals");
+const resetBtn = document.getElementById("reset");
 
-let num1 = "0";
+let num1 = "";
 let num2 = "";
 let operator = "";
+let shouldResetDisplay = false;
 
-digitButtons.forEach(btn => btn.addEventListener("click", () => {
-    // If no operator is selected, edit num1
-    if (operator == "") {
-        // If number is 0, either do nothing or turn the number into the new digit
-        if (num1 == "0") {
-            if (btn.id == "zero") return;
-            num1 = btn.textContent;
-        }
-        // If number is not 0, add new digit to the end
-        else num1 += btn.textContent;
+function calculate() {
+    if (num1 == "" || num2 == "" || operator == "") return;
+
+    let result = operate(operator, Number(num1), Number(num2));
+
+    // If divide by zero
+    if (typeof result === "string") {
+        display.value = result;
+        resetCalculator();
+        return;
     }
-    // If operator is selected, edit num2
-    else {
-        if (num2 == "0") {
-            if (btn.id == "zero") return;
-            num2 = btn.textContent;
-        }
-        else num2 += btn.textContent;
-    }
-    
-    display.value = `${num1} ${operator} ${num2}`;
-}));
 
-operatorButtons.forEach(btn => btn.addEventListener("click", () => {
-    // Calculate will work if operator was selected already
-    calculate();
+    result = Math.round(result * 100000) / 100000;
+    display.value = result;
 
-    // Add operator to display
-    operator = btn.textContent;
-    display.value = `${num1} ${btn.textContent} `;
-}));
-
-const equalsBtn = document.getElementById("equals");
-equalsBtn.addEventListener("click", calculate);
-
-const resetBtn = document.getElementById("reset");
-resetBtn.addEventListener("click", () => {
-    num1 = "0";
+    num1 = result.toString();
     num2 = "";
     operator = "";
+    shouldResetDisplay = true;
+}
+
+function resetCalculator() {
+    num1 = "";
+    num2 = "";
+    operator = "";
+    shouldResetDisplay = false;
+}
+
+digitButtons.forEach(button => {
+    button.addEventListener("click", () => {
+        if (shouldResetDisplay) {
+            resetCalculator();
+            display.value = "";
+        }
+
+        if (operator == "") {
+            num1 += button.textContent;
+            display.value = num1;
+        }
+        else {
+            num2 += button.textContent;
+            display.value = num2;
+        }
+    });
+});
+
+operatorButtons.forEach(button => {
+    button.addEventListener("click", () => {
+        if (num1 == "") return;
+        if (num2 != "") calculate();
+
+        operator = button.textContent;
+        shouldResetDisplay = false;
+    });
+});
+
+equalsBtn.addEventListener("click", calculate);
+
+resetBtn.addEventListener("click", () => {
+    resetCalculator();
     display.value = "0";
 });
